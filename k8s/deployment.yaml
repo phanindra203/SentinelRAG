@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentinelrag-api
+  labels:
+    app: sentinelrag-api
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: sentinelrag-api
+
+  template:
+    metadata:
+      labels:
+        app: sentinelrag-api
+        azure.workload.identity/use: "true"
+
+    spec:
+      serviceAccountName: sentinelrag-api
+
+      containers:
+        - name: sentinelrag-api
+          image: sentinelragacr.azurecr.io/sentinelrag:1.2
+          imagePullPolicy: IfNotPresent
+
+          envFrom:
+            - configMapRef:
+                name: sentinelrag-config
+
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3

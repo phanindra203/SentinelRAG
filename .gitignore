@@ -1,5 +1,21 @@
-.venv/
+# Python generated files
 __pycache__/
-*.pyc
-.env
+*.py[cod]
+
+# macOS
 .DS_Store
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated evaluation output
+generation_results.txt
