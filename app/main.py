@@ -3,8 +3,9 @@ import os
 from dotenv import load_dotenv
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi.security import APIKeyHeader
+from pydantic import BaseModel, Field
 
 from app.retriever import search_documents
 
@@ -17,6 +18,13 @@ load_dotenv()
 # =========================
 
 app = FastAPI(title="SentinelRAG")
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+def verify_api_key(api_key: str | None = Security(api_key_header)):
+    expected_key = os.environ.get("SENTINELRAG_API_KEY")
+    if not expected_key or not api_key or api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 # =========================
@@ -36,7 +44,8 @@ client = project.get_openai_client()
 # =========================
 
 class QueryRequest(BaseModel):
-    question: str
+    question: str = Field(min_length=1, max_length=2000)
+
 
 
 # =========================
@@ -55,7 +64,10 @@ def health_check():
 # =========================
 
 @app.post("/query")
-def query(request: QueryRequest):
+def query(
+    request: QueryRequest,
+    _: None = Depends(verify_api_key),
+):
 
     # Retrieve relevant chunks
     results = search_documents(

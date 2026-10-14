@@ -71,6 +71,9 @@ steps:
           --name aks-sentinelrag-dev \
           --overwrite-existing
 
+        kubectl set env deployment/sentinelrag-api \
+          --from=secret/sentinelrag-api-secret
+
         kubectl set image deployment/sentinelrag-api \
           sentinelrag-api=$(acrLoginServer)/$(imageName):$(Build.BuildId)
 

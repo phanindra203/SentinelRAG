@@ -23,13 +23,19 @@ spec:
 
       containers:
         - name: sentinelrag-api
-          image: sentinelragacr.azurecr.io/sentinelrag:1.2
+          image: sentinelragacr.azurecr.io/sentinelrag:68
           imagePullPolicy: IfNotPresent
 
           envFrom:
             - configMapRef:
                 name: sentinelrag-config
 
+          env:
+            - name: SENTINELRAG_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sentinelrag-api-secret
+                  key: SENTINELRAG_API_KEY
           ports:
             - containerPort: 8000
               protocol: TCP
