@@ -28,17 +28,28 @@ logger = logging.getLogger("sentinelrag")
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
     start_time = time.perf_counter()
-    response = await call_next(request)
-    duration_ms = (time.perf_counter() - start_time) * 1000
+    status_code = 500
 
-    logger.info(
-        "request method=%s path=%s status=%s duration_ms=%.2f",
-        request.method,
-        request.url.path,
-        response.status_code,
-        duration_ms,
-    )
-    return response
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    except Exception:
+        logger.exception(
+            "request failed method=%s path=%s",
+            request.method,
+            request.url.path,
+        )
+        raise
+    finally:
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        logger.info(
+            "request method=%s path=%s status=%s duration_ms=%.2f",
+            request.method,
+            request.url.path,
+            status_code,
+            duration_ms,
+        )
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
