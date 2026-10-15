@@ -1,9 +1,11 @@
+import logging
+import time
 import os
 
 from dotenv import load_dotenv
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
-from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi import Depends, FastAPI, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
@@ -18,6 +20,25 @@ load_dotenv()
 # =========================
 
 app = FastAPI(title="SentinelRAG")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("sentinelrag")
+
+
+@app.middleware("http")
+async def request_logging_middleware(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start_time) * 1000
+
+    logger.info(
+        "request method=%s path=%s status=%s duration_ms=%.2f",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
