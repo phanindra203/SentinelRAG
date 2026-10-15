@@ -8,6 +8,8 @@ from azure.identity import DefaultAzureCredential
 from fastapi import Depends, FastAPI, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from starlette.responses import Response
 
 from app.retriever import search_documents
 
@@ -23,6 +25,18 @@ app = FastAPI(title="SentinelRAG")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sentinelrag")
+
+REQUEST_COUNT = Counter(
+    "sentinelrag_http_requests_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status"],
+)
+
+REQUEST_DURATION = Histogram(
+    "sentinelrag_http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "endpoint"],
+)
 
 
 @app.middleware("http")
@@ -42,7 +56,16 @@ async def request_logging_middleware(request: Request, call_next):
         )
         raise
     finally:
-        duration_ms = (time.perf_counter() - start_time) * 1000
+        duration_seconds = time.perf_counter() - start_time
+        duration_ms = duration_seconds * 1000
+
+        REQUEST_COUNT.labels(
+            request.method, request.url.path, str(status_code)
+        ).inc()
+        REQUEST_DURATION.labels(
+            request.method, request.url.path
+        ).observe(duration_seconds)
+
         logger.info(
             "request method=%s path=%s status=%s duration_ms=%.2f",
             request.method,
@@ -51,6 +74,14 @@ async def request_logging_middleware(request: Request, call_next):
             duration_ms,
         )
 
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics():
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+    )
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 def verify_api_key(api_key: str | None = Security(api_key_header)):
