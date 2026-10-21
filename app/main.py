@@ -1,3 +1,4 @@
+
 import logging
 import time
 import os
@@ -16,7 +17,6 @@ from app.retriever import search_documents
 
 load_dotenv()
 
-
 # =========================
 # FastAPI application
 # =========================
@@ -25,6 +25,23 @@ app = FastAPI(title="SentinelRAG")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sentinelrag")
+
+# =========================
+# API authentication
+# =========================
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+def verify_api_key(api_key: str | None = Security(api_key_header)):
+    expected_key = os.environ.get("SENTINELRAG_API_KEY")
+    if not expected_key or not api_key or api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+
+# =========================
+# Prometheus metrics
+# =========================
 
 REQUEST_COUNT = Counter(
     "sentinelrag_http_requests_total",
@@ -38,6 +55,10 @@ REQUEST_DURATION = Histogram(
     ["method", "endpoint"],
 )
 
+
+# =========================
+# Request logging and metrics
+# =========================
 
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
@@ -75,19 +96,16 @@ async def request_logging_middleware(request: Request, call_next):
         )
 
 
+# =========================
+# Metrics endpoint (protected)
+# =========================
 
 @app.get("/metrics", include_in_schema=False)
-def metrics():
+def metrics(_: None = Depends(verify_api_key)):
     return Response(
         content=generate_latest(),
         media_type=CONTENT_TYPE_LATEST,
     )
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-
-def verify_api_key(api_key: str | None = Security(api_key_header)):
-    expected_key = os.environ.get("SENTINELRAG_API_KEY")
-    if not expected_key or not api_key or api_key != expected_key:
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 
 # =========================
@@ -110,16 +128,13 @@ class QueryRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
 
 
-
 # =========================
 # Health check
 # =========================
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy"
-    }
+    return {"status": "healthy"}
 
 
 # =========================
@@ -131,7 +146,6 @@ def query(
     request: QueryRequest,
     _: None = Depends(verify_api_key),
 ):
-
     # Retrieve relevant chunks
     results = search_documents(
         request.question,
@@ -153,7 +167,6 @@ def query(
     context_parts = []
 
     for result in results:
-
         context_parts.append(
             f"""
 Source: {result["filename"]}

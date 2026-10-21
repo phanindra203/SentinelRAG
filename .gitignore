@@ -19,3 +19,6 @@ venv/
 
 # Generated evaluation output
 generation_results.txt
+
+# Local monitoring credentials
+monitoring/secrets/
