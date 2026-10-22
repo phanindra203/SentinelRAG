@@ -10,6 +10,13 @@ from app.retriever import search_documents
 load_dotenv()
 
 
+def normalize_text(text):
+    """Normalize Unicode hyphen variants for phrase matching."""
+    for hyphen in ("\u2010", "\u2011", "\u2012", "\u2013", "\u2014", "\u2212"):
+        text = text.replace(hyphen, "-")
+    return text
+
+
 # ==========================================
 # Microsoft Foundry client
 # ==========================================
@@ -228,15 +235,15 @@ def evaluate():
         # Check expected concepts
         # ----------------------------------
 
-        answer_lower = answer.lower()
-        context_lower = retrieved_context.lower()
+        answer_lower = normalize_text(answer).lower()
+        context_lower = normalize_text(retrieved_context).lower()
 
         matched_keywords = []
         missing_keywords = []
 
         for keyword in expected_keywords:
 
-            if keyword.lower() in answer_lower:
+            if normalize_text(keyword).lower() in answer_lower:
                 matched_keywords.append(keyword)
             else:
                 missing_keywords.append(keyword)
@@ -249,7 +256,7 @@ def evaluate():
         unsupported_keywords = [
             keyword
             for keyword in matched_keywords
-            if keyword.lower() not in context_lower
+            if normalize_text(keyword).lower() not in context_lower
         ]
 
         print("\nExpected concepts:")
