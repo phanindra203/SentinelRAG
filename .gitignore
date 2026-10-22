@@ -33,3 +33,19 @@ k8s/*.bak
 monitoring/*.backup*
 monitoring/prometheus/*.backup*
 *deployment-backup*
+
+# Terraform local files and state
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
