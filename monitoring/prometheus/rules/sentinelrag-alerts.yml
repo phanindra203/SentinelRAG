@@ -1,0 +1,19 @@
+groups:
+  - name: sentinelrag-api-alerts
+    rules:
+      - alert: SentinelRAGAPIDown
+        expr: up{job="sentinelrag-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SentinelRAG API is down"
+          description: "Prometheus has been unable to scrape the SentinelRAG API for more than one minute."
+      - alert: SentinelRAGHighServerErrorRate
+        expr: sum(rate(sentinelrag_http_requests_total{status=~"5.."}[5m])) * 60 > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SentinelRAG API has a high server-error rate"
+          description: "SentinelRAG has returned more than 5 HTTP 5xx responses per minute for 5 minutes."

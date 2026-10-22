@@ -22,3 +22,14 @@ generation_results.txt
 
 # Local monitoring credentials
 monitoring/secrets/
+
+# Generated Alertmanager runtime config containing SMTP credentials
+monitoring/alertmanager/alertmanager.runtime.yml
+
+# Local working backups — do not commit
+app/*.before_*
+app/*backup*
+k8s/*.bak
+monitoring/*.backup*
+monitoring/prometheus/*.backup*
+*deployment-backup*

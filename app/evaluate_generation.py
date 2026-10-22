@@ -31,7 +31,7 @@ EVALUATION_DATASET = [
         "question": "What is a Kubernetes Deployment?",
         "expected_keywords": [
             "replicated Pods",
-            "running instances",
+            "running application instances",
         ],
     },
     {
@@ -99,7 +99,7 @@ EVALUATION_DATASET = [
         "expected_keywords": [
             "managed identities",
             "Azure resources",
-            "without storing passwords",
+            "long-lived credentials",
         ],
     },
 ]
